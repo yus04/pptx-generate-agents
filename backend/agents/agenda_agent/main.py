@@ -180,13 +180,23 @@ class AgendaGenerationExecutor(AgentExecutor):
 agent_card = AgentCard(
     name="Agenda Generation Agent",
     description="PowerPoint スライドのアジェンダを生成するエージェント",
-    version="1.0.0"
+    version="1.0.0",
+    url="http://agenda-agent:8001",
+    skills=[],  # Will be populated below
+    capabilities={},
+    default_input_modes=[],
+    default_output_modes=[]
 )
 
 agent_skills = [
     AgentSkill(
         name="generate_agenda",
-        description="プロンプトからスライドアジェンダを生成"
+        description="プロンプトからスライドアジェンダを生成",
+        id="generate_agenda",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     )
 ]
 

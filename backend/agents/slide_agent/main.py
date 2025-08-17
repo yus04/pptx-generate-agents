@@ -265,13 +265,23 @@ class SlideCreationExecutor(AgentExecutor):
 agent_card = AgentCard(
     name="Slide Creation Agent",
     description="python-pptx を使用してPowerPointスライドを作成するエージェント",
-    version="1.0.0"
+    version="1.0.0",
+    url="http://slide-agent:8003",
+    skills=[],  # Will be populated below
+    capabilities={},
+    default_input_modes=[],
+    default_output_modes=[]
 )
 
 agent_skills = [
     AgentSkill(
         name="create_slides",
-        description="アジェンダと情報からPowerPointスライドを作成"
+        description="アジェンダと情報からPowerPointスライドを作成",
+        id="create_slides",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     )
 ]
 

@@ -233,17 +233,32 @@ class OrchestrationExecutor(AgentExecutor):
 agent_card = AgentCard(
     name="PowerPoint Slide Generation Orchestrator",
     description="PowerPoint スライド生成の全体フローを管理するオーケストレーションエージェント",
-    version="1.0.0"
+    version="1.0.0",
+    url=f"http://{settings.a2a_host}:{settings.a2a_port}",
+    skills=[],  # Will be populated below
+    capabilities={},
+    default_input_modes=[],
+    default_output_modes=[]
 )
 
 agent_skills = [
     AgentSkill(
         name="slide_generation",
-        description="スライド生成フローの開始"
+        description="スライド生成フローの開始",
+        id="slide_generation",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     ),
     AgentSkill(
         name="agenda_approval", 
-        description="アジェンダ承認処理"
+        description="アジェンダ承認処理",
+        id="agenda_approval",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     )
 ]
 

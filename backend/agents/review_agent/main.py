@@ -287,13 +287,23 @@ class ReviewExecutor(AgentExecutor):
 agent_card = AgentCard(
     name="Review Agent",
     description="PowerPoint スライドの品質チェックとハルシネーション検出を行うエージェント",
-    version="1.0.0"
+    version="1.0.0",
+    url="http://review-agent:8004",
+    skills=[],  # Will be populated below
+    capabilities={},
+    default_input_modes=[],
+    default_output_modes=[]
 )
 
 agent_skills = [
     AgentSkill(
         name="review_slides",
-        description="スライドの品質チェックとハルシネーション検出"
+        description="スライドの品質チェックとハルシネーション検出",
+        id="review_slides",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     )
 ]
 
