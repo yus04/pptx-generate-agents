@@ -11,7 +11,6 @@ import {
   MenuItem,
   FormControlLabel,
   Switch,
-  Chip,
   LinearProgress,
   Alert,
   Dialog,
@@ -23,11 +22,32 @@ import {
 import { Add as AddIcon, PlayArrow as PlayIcon } from '@mui/icons-material';
 import { useIsAuthenticated } from '@azure/msal-react';
 
-import { SlideGenerationRequest, SlideGenerationJob, SlideAgenda } from '../types';
+import { SlideGenerationRequest, SlideAgenda } from '../types';
 import ProgressAnimation from '../components/ProgressAnimation';
+import { useSlideGeneration } from '../hooks/useSlideGeneration';
+import { useUserData } from '../hooks/useUserData';
 
 const HomePage: React.FC = () => {
   const isAuthenticated = useIsAuthenticated();
+  
+  // Use custom hooks
+  const {
+    currentJob,
+    isGenerating,
+    error: generationError,
+    generateSlides,
+    approveAgenda,
+    setError: setGenerationError,
+  } = useSlideGeneration();
+
+  const {
+    templates,
+    promptTemplates,
+    llmConfigs,
+    userSettings,
+    loading: dataLoading,
+    error: dataError,
+  } = useUserData();
   
   // Form state
   const [prompt, setPrompt] = useState('');
@@ -39,14 +59,32 @@ const HomePage: React.FC = () => {
   const [includeImages, setIncludeImages] = useState(true);
   const [includeTables, setIncludeTables] = useState(true);
   
-  // Job state
-  const [currentJob, setCurrentJob] = useState<SlideGenerationJob | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  
   // Agenda approval
   const [agendaDialog, setAgendaDialog] = useState(false);
   const [pendingAgenda, setPendingAgenda] = useState<SlideAgenda | null>(null);
+
+  // Set default values from user settings
+  React.useEffect(() => {
+    if (userSettings) {
+      setAutoApproval(userSettings.auto_approval);
+      if (userSettings.default_template_id) {
+        setTemplateId(userSettings.default_template_id);
+      }
+      if (userSettings.default_llm_config_id) {
+        setLlmConfigId(userSettings.default_llm_config_id);
+      }
+    }
+  }, [userSettings]);
+
+  // Monitor job status for agenda approval
+  React.useEffect(() => {
+    if (currentJob?.status === 'agenda_approval' && currentJob.agenda && !autoApproval) {
+      setPendingAgenda(currentJob.agenda);
+      setAgendaDialog(true);
+    }
+  }, [currentJob, autoApproval]);
+
+  const error = generationError || dataError;
 
   const handleAddUrl = () => {
     setReferenceUrls([...referenceUrls, '']);
@@ -67,17 +105,14 @@ const HomePage: React.FC = () => {
 
   const handleGenerate = async () => {
     if (!isAuthenticated) {
-      setError('ログインが必要です');
+      setGenerationError('ログインが必要です');
       return;
     }
 
     if (!prompt.trim()) {
-      setError('プロンプトを入力してください');
+      setGenerationError('プロンプトを入力してください');
       return;
     }
-
-    setIsGenerating(true);
-    setError(null);
 
     const request: SlideGenerationRequest = {
       prompt: prompt.trim(),
@@ -91,69 +126,24 @@ const HomePage: React.FC = () => {
     };
 
     try {
-      // TODO: API call to generate slides
-      console.log('Generating slides with request:', request);
-      
-      // Simulate API response
-      setTimeout(() => {
-        const mockJob: SlideGenerationJob = {
-          id: 'mock-job-id',
-          user_id: 'mock-user',
-          request,
-          status: 'agenda_generation',
-          progress: 25,
-          current_step: 'アジェンダ生成中...',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        setCurrentJob(mockJob);
-        
-        // Simulate agenda generation
-        setTimeout(() => {
-          const mockAgenda: SlideAgenda = {
-            slides: [
-              {
-                page_number: 1,
-                title: 'タイトルスライド',
-                content: 'プレゼンテーションの概要',
-                images: [],
-                tables: [],
-              },
-              {
-                page_number: 2,
-                title: 'セクション 1',
-                content: '最初のセクションの内容',
-                images: [],
-                tables: [],
-              },
-            ],
-            total_pages: 2,
-            estimated_duration: 5,
-          };
-          
-          setPendingAgenda(mockAgenda);
-          if (!autoApproval) {
-            setAgendaDialog(true);
-          }
-        }, 2000);
-      }, 1000);
-      
+      await generateSlides(request);
     } catch (error) {
-      setError('スライド生成に失敗しました');
-      setIsGenerating(false);
+      // Error is handled by the hook
     }
   };
 
-  const handleApproveAgenda = () => {
+  const handleApproveAgenda = async () => {
+    if (!currentJob) return;
+    
     setAgendaDialog(false);
-    // TODO: Continue generation process
-    setIsGenerating(false);
+    await approveAgenda(currentJob.id, true, pendingAgenda);
   };
 
-  const handleRejectAgenda = () => {
+  const handleRejectAgenda = async () => {
+    if (!currentJob) return;
+    
     setAgendaDialog(false);
-    setCurrentJob(null);
-    setIsGenerating(false);
+    await approveAgenda(currentJob.id, false);
   };
 
   return (
@@ -244,7 +234,11 @@ const HomePage: React.FC = () => {
                 disabled={!isAuthenticated}
               >
                 <MenuItem value="">デフォルト</MenuItem>
-                {/* TODO: Load user templates */}
+                {templates.map((template) => (
+                  <MenuItem key={template.id} value={template.id}>
+                    {template.name}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>
@@ -258,7 +252,11 @@ const HomePage: React.FC = () => {
                 disabled={!isAuthenticated}
               >
                 <MenuItem value="">デフォルト (GPT-4)</MenuItem>
-                {/* TODO: Load user LLM configs */}
+                {llmConfigs.map((config) => (
+                  <MenuItem key={config.id} value={config.id}>
+                    {config.name} ({config.model_name})
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </Grid>

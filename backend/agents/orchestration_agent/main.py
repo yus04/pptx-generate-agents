@@ -383,6 +383,187 @@ async def get_templates(user_id: str = Depends(get_current_user)):
     return templates
 
 
+@app.delete("/templates/{template_id}")
+async def delete_template(
+    template_id: str,
+    user_id: str = Depends(get_current_user)
+):
+    """テンプレートを削除"""
+    template_data = cosmos_client.read_item("slide_templates", template_id, user_id)
+    if not template_data:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    # Blob Storage からファイルを削除
+    blob_client.delete_file(template_data["blob_url"])
+    
+    # データベースから削除
+    cosmos_client.delete_item("slide_templates", template_id, user_id)
+    
+    return {"message": "Template deleted successfully"}
+
+
+# Prompt template management endpoints
+@app.get("/prompt-templates")
+async def get_prompt_templates(user_id: str = Depends(get_current_user)):
+    """プロンプトテンプレート一覧を取得"""
+    templates = cosmos_client.get_user_items("prompt_templates", user_id)
+    return templates
+
+
+@app.post("/prompt-templates")
+async def create_prompt_template(
+    template: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """プロンプトテンプレートを作成"""
+    prompt_template = PromptTemplate(
+        id=str(uuid.uuid4()),
+        name=template["name"],
+        prompt=template["prompt"],
+        description=template.get("description", ""),
+        user_id=user_id,
+        is_default=template.get("is_default", False)
+    )
+    
+    cosmos_client.create_item("prompt_templates", prompt_template.dict())
+    return prompt_template.dict()
+
+
+@app.put("/prompt-templates/{template_id}")
+async def update_prompt_template(
+    template_id: str,
+    template: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """プロンプトテンプレートを更新"""
+    existing_template = cosmos_client.read_item("prompt_templates", template_id, user_id)
+    if not existing_template:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    # 更新データをマージ
+    existing_template.update(template)
+    existing_template["updated_at"] = datetime.utcnow().isoformat()
+    
+    cosmos_client.update_item("prompt_templates", existing_template)
+    return existing_template
+
+
+@app.delete("/prompt-templates/{template_id}")
+async def delete_prompt_template(
+    template_id: str,
+    user_id: str = Depends(get_current_user)
+):
+    """プロンプトテンプレートを削除"""
+    template_data = cosmos_client.read_item("prompt_templates", template_id, user_id)
+    if not template_data:
+        raise HTTPException(status_code=404, detail="Template not found")
+    
+    cosmos_client.delete_item("prompt_templates", template_id, user_id)
+    return {"message": "Prompt template deleted successfully"}
+
+
+# LLM configuration endpoints
+@app.get("/llm-configs")
+async def get_llm_configs(user_id: str = Depends(get_current_user)):
+    """LLM設定一覧を取得"""
+    configs = cosmos_client.get_user_items("llm_configs", user_id)
+    return configs
+
+
+@app.post("/llm-configs")
+async def create_llm_config(
+    config: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """LLM設定を作成"""
+    llm_config = LLMConfig(
+        id=str(uuid.uuid4()),
+        name=config["name"],
+        provider=config["provider"],
+        model_name=config["model_name"],
+        temperature=config.get("temperature", 0.7),
+        max_tokens=config.get("max_tokens", 2000),
+        user_id=user_id,
+        is_default=config.get("is_default", False)
+    )
+    
+    cosmos_client.create_item("llm_configs", llm_config.dict())
+    return llm_config.dict()
+
+
+@app.put("/llm-configs/{config_id}")
+async def update_llm_config(
+    config_id: str,
+    config: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """LLM設定を更新"""
+    existing_config = cosmos_client.read_item("llm_configs", config_id, user_id)
+    if not existing_config:
+        raise HTTPException(status_code=404, detail="Config not found")
+    
+    existing_config.update(config)
+    existing_config["updated_at"] = datetime.utcnow().isoformat()
+    
+    cosmos_client.update_item("llm_configs", existing_config)
+    return existing_config
+
+
+@app.delete("/llm-configs/{config_id}")
+async def delete_llm_config(
+    config_id: str,
+    user_id: str = Depends(get_current_user)
+):
+    """LLM設定を削除"""
+    config_data = cosmos_client.read_item("llm_configs", config_id, user_id)
+    if not config_data:
+        raise HTTPException(status_code=404, detail="Config not found")
+    
+    cosmos_client.delete_item("llm_configs", config_id, user_id)
+    return {"message": "LLM config deleted successfully"}
+
+
+# User settings endpoints
+@app.get("/user-settings")
+async def get_user_settings(user_id: str = Depends(get_current_user)):
+    """ユーザー設定を取得"""
+    settings_data = cosmos_client.read_item("users", user_id, user_id)
+    if not settings_data:
+        # デフォルト設定を作成
+        default_settings = UserSettings(
+            user_id=user_id,
+            auto_approval=False,
+            notification_enabled=True
+        )
+        cosmos_client.create_item("users", default_settings.dict())
+        return default_settings.dict()
+    
+    return settings_data
+
+
+@app.put("/user-settings")
+async def update_user_settings(
+    settings: Dict[str, Any],
+    user_id: str = Depends(get_current_user)
+):
+    """ユーザー設定を更新"""
+    existing_settings = cosmos_client.read_item("users", user_id, user_id)
+    if not existing_settings:
+        # 新規作成
+        user_settings = UserSettings(
+            user_id=user_id,
+            **settings
+        )
+        cosmos_client.create_item("users", user_settings.dict())
+        return user_settings.dict()
+    else:
+        # 既存設定を更新
+        existing_settings.update(settings)
+        existing_settings["updated_at"] = datetime.utcnow().isoformat()
+        cosmos_client.update_item("users", existing_settings)
+        return existing_settings
+
+
 # Create A2A application
 a2a_app = A2AStarletteApplication(app, request_handler)
 
