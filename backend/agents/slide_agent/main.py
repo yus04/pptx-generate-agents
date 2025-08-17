@@ -10,10 +10,10 @@ from PIL import Image
 import tempfile
 import os
 
-from a2a_python_sdk import (
-    AgentCard, AgentSkill, AgentExecutor, DefaultRequestHandler,
-    A2AStarletteApplication
-)
+from a2a.types import AgentCard, AgentSkill
+from a2a.server.agent_execution import AgentExecutor
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.apps import A2AStarletteApplication
 
 from ...shared.models import AgentRequest, AgentResponse, SlideContent, SlideAgenda
 from ...shared.storage import blob_client

@@ -6,10 +6,11 @@ import uuid
 import asyncio
 from datetime import datetime
 
-from a2a_python_sdk import (
-    AgentCard, AgentSkill, AgentExecutor, DefaultRequestHandler,
-    A2AStarletteApplication, A2AClient
-)
+from a2a.types import AgentCard, AgentSkill
+from a2a.server.agent_execution import AgentExecutor
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.apps import A2AStarletteApplication
+from a2a.client import A2AClient
 
 from ..shared.models import (
     SlideGenerationRequest, SlideGenerationJob, SlideGenerationStatus,

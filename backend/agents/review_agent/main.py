@@ -6,10 +6,10 @@ from semantic_kernel.functions import KernelArguments
 from typing import Dict, Any
 import json
 
-from a2a_python_sdk import (
-    AgentCard, AgentSkill, AgentExecutor, DefaultRequestHandler,
-    A2AStarletteApplication
-)
+from a2a.types import AgentCard, AgentSkill
+from a2a.server.agent_execution import AgentExecutor
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.apps import A2AStarletteApplication
 
 from ...shared.models import AgentRequest, AgentResponse
 from ...shared.config import settings
