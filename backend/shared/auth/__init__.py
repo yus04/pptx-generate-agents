@@ -16,9 +16,9 @@ class AuthManager:
         )
     
     def verify_azure_token(self, token: str) -> Optional[Dict[str, Any]]:
-        """Azure AD トークンを検証"""
+        """Entra ID トークンを検証"""
         try:
-            # In a real implementation, you would validate against Azure AD
+            # In a real implementation, you would validate against Entra ID
             # For now, we'll decode without verification for development
             decoded = jwt.decode(token, options={"verify_signature": False})
             return {
@@ -57,7 +57,7 @@ class AuthManager:
         
         token = authorization.replace("Bearer ", "")
         
-        # Try Azure AD token first
+        # Try Entra ID token first
         user_info = self.verify_azure_token(token)
         if user_info:
             return user_info["user_id"]

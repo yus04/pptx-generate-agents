@@ -28,7 +28,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open }) => {
       <DialogContent>
         <Box sx={{ textAlign: 'center', py: 2 }}>
           <Typography variant="body1" gutterBottom>
-            PowerPointスライドを生成するには、Azure ADでログインしてください。
+            PowerPointスライドを生成するには、Entra ID でログインしてください。
           </Typography>
           <Typography variant="body2" color="text.secondary">
             ログイン後、以下の機能をご利用いただけます：
@@ -48,7 +48,7 @@ const LoginModal: React.FC<LoginModalProps> = ({ open }) => {
           fullWidth
           size="large"
         >
-          Azure AD でログイン
+          Entra ID でログイン
         </Button>
       </DialogActions>
     </Dialog>
