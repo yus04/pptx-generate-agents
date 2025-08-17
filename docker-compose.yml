@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Orchestration Agent
+  orchestration-agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.orchestration
+    ports:
+      - "8000:8000"
+    environment:
+      - AZURE_TENANT_ID=${AZURE_TENANT_ID}
+      - AZURE_CLIENT_ID=${AZURE_CLIENT_ID}
+      - AZURE_CLIENT_SECRET=${AZURE_CLIENT_SECRET}
+      - COSMOS_DB_ENDPOINT=${COSMOS_DB_ENDPOINT}
+      - COSMOS_DB_KEY=${COSMOS_DB_KEY}
+      - BLOB_STORAGE_CONNECTION_STRING=${BLOB_STORAGE_CONNECTION_STRING}
+      - AZURE_AI_FOUNDRY_ENDPOINT=${AZURE_AI_FOUNDRY_ENDPOINT}
+      - AZURE_AI_FOUNDRY_KEY=${AZURE_AI_FOUNDRY_KEY}
+      - A2A_TOKEN_SECRET=${A2A_TOKEN_SECRET}
+    depends_on:
+      - agenda-agent
+      - information-agent
+      - slide-agent
+      - review-agent
+    networks:
+      - pptx-network
+
+  # Agenda Generation Agent
+  agenda-agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.agenda
+    ports:
+      - "8001:8001"
+    environment:
+      - AZURE_AI_FOUNDRY_ENDPOINT=${AZURE_AI_FOUNDRY_ENDPOINT}
+      - AZURE_AI_FOUNDRY_KEY=${AZURE_AI_FOUNDRY_KEY}
+    networks:
+      - pptx-network
+
+  # Information Collection Agent
+  information-agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.information
+    ports:
+      - "8002:8002"
+    environment:
+      - AZURE_AI_FOUNDRY_ENDPOINT=${AZURE_AI_FOUNDRY_ENDPOINT}
+      - AZURE_AI_FOUNDRY_KEY=${AZURE_AI_FOUNDRY_KEY}
+    networks:
+      - pptx-network
+
+  # Slide Creation Agent
+  slide-agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.slide
+    ports:
+      - "8003:8003"
+    environment:
+      - BLOB_STORAGE_CONNECTION_STRING=${BLOB_STORAGE_CONNECTION_STRING}
+    networks:
+      - pptx-network
+
+  # Review Agent
+  review-agent:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.review
+    ports:
+      - "8004:8004"
+    environment:
+      - AZURE_AI_FOUNDRY_ENDPOINT=${AZURE_AI_FOUNDRY_ENDPOINT}
+      - AZURE_AI_FOUNDRY_KEY=${AZURE_AI_FOUNDRY_KEY}
+      - BLOB_STORAGE_CONNECTION_STRING=${BLOB_STORAGE_CONNECTION_STRING}
+    networks:
+      - pptx-network
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_AZURE_CLIENT_ID=${REACT_APP_AZURE_CLIENT_ID}
+      - REACT_APP_AZURE_TENANT_ID=${REACT_APP_AZURE_TENANT_ID}
+      - REACT_APP_API_BASE_URL=http://orchestration-agent:8000
+    depends_on:
+      - orchestration-agent
+    networks:
+      - pptx-network
+
+networks:
+  pptx-network:
+    driver: bridge
