@@ -10,7 +10,7 @@ Microsoft Learn や指定された URL の情報を参照して、PowerPoint ス
 - **カスタムデザイン**: ユーザーアップロードのスライドをマスターテンプレートとして利用
 - **エージェントベースアーキテクチャ**: 複数の専用エージェントによる協調処理
 - **Web インターフェース**: React TypeScript による直感的な操作画面
-- **ユーザー認証**: Azure Entra ID による安全なアクセス管理
+- **ユーザー認証**: Microsoft Entra ID による安全なアクセス管理
 - **クラウド統合**: Azure Cosmos DB、Blob Storage との連携
 
 ## アーキテクチャ
@@ -25,7 +25,7 @@ Microsoft Learn や指定された URL の情報を参照して、PowerPoint ス
 ### 技術スタック
 - **バックエンド**: Python, A2A Python SDK, Semantic Kernel
 - **フロントエンド**: TypeScript, React
-- **認証**: Azure Entra ID
+- **認証**: Microsoft Entra ID
 - **データベース**: Azure Cosmos DB
 - **ストレージ**: Azure Blob Storage
 - **AI サービス**: Azure AI Foundry Agent Service
@@ -71,7 +71,7 @@ Microsoft Learn や指定された URL の情報を参照して、PowerPoint ス
 - 参照 URL の登録
 
 ### 3. 認証とセキュリティ
-- Azure Entra ID による SSO
+- Microsoft Entra ID による SSO
 - トークンベースの API 認証
 - ユーザー別設定の分離
 
@@ -80,6 +80,9 @@ Microsoft Learn や指定された URL の情報を参照して、PowerPoint ス
 ### 前提条件
 - Python 3.9+
 - Node.js 18+
+    - 以下の条件でテスト済み
+    - Node.js v20.19.4
+    - npm  v10.8.2
 - Azure サブスクリプション
 - Kubernetes クラスター (デプロイ用)
 
@@ -115,11 +118,3 @@ cd frontend
 npm install
 npm start
 ```
-
-## ライセンス
-
-MIT License
-
-## 貢献
-
-プルリクエストやイシューの報告をお待ちしています。

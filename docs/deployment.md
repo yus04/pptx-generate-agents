@@ -17,7 +17,7 @@ cp .env.example .env
 ```
 
 2. 必要な環境変数：
-   - Azure AD 認証情報
+   - Entra ID 認証情報
    - Cosmos DB 接続情報
    - Blob Storage 接続情報
    - Azure AI Foundry エンドポイント
@@ -144,7 +144,7 @@ Azure Log Analytics または ELK Stack を推奨。
 ### よくある問題
 
 1. **認証エラー**
-   - Azure AD の設定を確認
+   - Entra ID の設定を確認
    - クライアント ID とテナント ID が正しいか確認
 
 2. **データベース接続エラー**
@@ -176,7 +176,7 @@ kubectl logs deployment/pptx-orchestration
    - HTTPS の使用
 
 3. **認証・認可**
-   - Azure AD の適切な設定
+   - Entra ID の適切な設定
    - API トークンの定期的な更新
 
 ## スケーリング
