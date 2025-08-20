@@ -80,11 +80,14 @@ export interface GenerationHistory {
 }
 
 export interface UserSettings {
+  id?: string;
   user_id: string;
-  default_llm_config_id?: string;
-  default_template_id?: string;
-  auto_approval: boolean;
-  notification_enabled: boolean;
-  created_at: string;
-  updated_at: string;
+  default_llm_config?: string;
+  default_template?: string;
+  auto_approval?: boolean;
+  auto_save?: boolean;
+  theme?: string;
+  notification_enabled?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }

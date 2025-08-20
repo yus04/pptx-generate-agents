@@ -1,23 +1,20 @@
-from fastapi import FastAPI
-from azure.ai.projects import AIProjectsClient
-from azure.ai.projects.models import AgentRunRequest
+from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from typing import Dict, Any, List
 import httpx
-import json
 
 from a2a.types import AgentCard, AgentSkill
 from a2a.server.agent_execution import AgentExecutor
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.apps import A2AStarletteApplication
 
-from ...shared.models import AgentRequest, AgentResponse
-from ...shared.config import settings
+from shared.models import AgentRequest, AgentResponse
+from shared.config import settings
 
 
 class InformationCollectionExecutor(AgentExecutor):
     def __init__(self):
-        self.ai_client = AIProjectsClient(
+        self.ai_client = AIProjectClient(
             endpoint=settings.azure_ai_foundry_endpoint,
             credential=DefaultAzureCredential()
         )
@@ -260,11 +257,8 @@ agent_skills = [
 executor = InformationCollectionExecutor()
 request_handler = DefaultRequestHandler(agent_card, agent_skills, executor)
 
-# FastAPI app
-app = FastAPI(title="Information Collection Agent")
-
 # Create A2A application
-a2a_app = A2AStarletteApplication(app, request_handler)
+a2a_app = A2AStarletteApplication(agent_card, request_handler)
 
 if __name__ == "__main__":
     import uvicorn

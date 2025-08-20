@@ -1,12 +1,10 @@
-from fastapi import FastAPI
 from pptx import Presentation
 from pptx.util import Inches, Pt
-from pptx.enum.text import MSO_ANCHOR, MSO_AUTO_SIZE
+from pptx.enum.text import MSO_AUTO_SIZE
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 import io
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, Optional
 import requests
-from PIL import Image
 import tempfile
 import os
 
@@ -15,9 +13,9 @@ from a2a.server.agent_execution import AgentExecutor
 from a2a.server.request_handlers import DefaultRequestHandler
 from a2a.server.apps import A2AStarletteApplication
 
-from ...shared.models import AgentRequest, AgentResponse, SlideContent, SlideAgenda
-from ...shared.storage import blob_client
-from ...shared.config import settings
+from shared.models import AgentRequest, AgentResponse, SlideContent, SlideAgenda
+from shared.storage import blob_client
+from shared.config import settings
 
 
 class SlideCreationExecutor(AgentExecutor):
@@ -288,11 +286,8 @@ agent_skills = [
 executor = SlideCreationExecutor()
 request_handler = DefaultRequestHandler(agent_card, agent_skills, executor)
 
-# FastAPI app
-app = FastAPI(title="Slide Creation Agent")
-
 # Create A2A application
-a2a_app = A2AStarletteApplication(app, request_handler)
+a2a_app = A2AStarletteApplication(agent_card, request_handler)
 
 if __name__ == "__main__":
     import uvicorn
