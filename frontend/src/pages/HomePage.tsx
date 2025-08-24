@@ -66,12 +66,12 @@ const HomePage: React.FC = () => {
   // Set default values from user settings
   React.useEffect(() => {
     if (userSettings) {
-      setAutoApproval(userSettings.auto_approval);
-      if (userSettings.default_template_id) {
-        setTemplateId(userSettings.default_template_id);
+      setAutoApproval(userSettings.auto_approval ?? false);
+      if (userSettings.default_template) {
+        setTemplateId(userSettings.default_template);
       }
-      if (userSettings.default_llm_config_id) {
-        setLlmConfigId(userSettings.default_llm_config_id);
+      if (userSettings.default_llm_config) {
+        setLlmConfigId(userSettings.default_llm_config);
       }
     }
   }, [userSettings]);

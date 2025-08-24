@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useIsAuthenticated } from '@azure/msal-react';
 import apiService from '../services/apiService';
 import { SlideTemplate, PromptTemplate, LLMConfig, UserSettings } from '../types';
 
 export const useUserData = () => {
+  const isAuthenticated = useIsAuthenticated();
   const [templates, setTemplates] = useState<SlideTemplate[]>([]);
   const [promptTemplates, setPromptTemplates] = useState<PromptTemplate[]>([]);
   const [llmConfigs, setLlmConfigs] = useState<LLMConfig[]>([]);
@@ -14,6 +16,23 @@ export const useUserData = () => {
     try {
       setLoading(true);
       setError(null);
+
+      // 認証されていない場合は空のデータを設定
+      if (!isAuthenticated) {
+      setTemplates([]);
+        setPromptTemplates([]);
+        setLlmConfigs([]);
+        setUserSettings({
+          user_id: '',
+          auto_approval: false,
+          auto_save: true,
+          theme: 'light',
+          notification_enabled: true,
+          default_template: undefined,
+          default_llm_config: undefined,
+        } as UserSettings);
+        return;
+      }
 
       const [templatesData, promptTemplatesData, llmConfigsData, settingsData] = await Promise.all([
         apiService.getTemplates(),

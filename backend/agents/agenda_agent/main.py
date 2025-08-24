@@ -1,18 +1,16 @@
-from fastapi import FastAPI
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
-from semantic_kernel.prompt_template import PromptTemplateConfig
+from semantic_kernel.prompt_template import PromptTemplateConfig, InputVariable
 from semantic_kernel.functions import KernelArguments
-from typing import List, Dict, Any
 import json
 
-from a2a_python_sdk import (
-    AgentCard, AgentSkill, AgentExecutor, DefaultRequestHandler,
-    A2AStarletteApplication
-)
+from a2a.types import AgentCard, AgentSkill
+from a2a.server.agent_execution import AgentExecutor
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.apps import A2AStarletteApplication
 
-from ...shared.models import AgentRequest, AgentResponse, SlideContent, SlideAgenda
-from ...shared.config import settings
+from shared.models import AgentRequest, AgentResponse, SlideContent, SlideAgenda
+from shared.config import settings
 
 
 class AgendaGenerationExecutor(AgentExecutor):
@@ -72,7 +70,11 @@ class AgendaGenerationExecutor(AgentExecutor):
             template=agenda_prompt,
             name="agenda_generation",
             description="スライドアジェンダ生成",
-            input_variables=["prompt", "max_slides", "reference_urls"]
+            input_variables=[
+                InputVariable(name="prompt", description="プレゼンテーションのプロンプト"),
+                InputVariable(name="max_slides", description="最大スライド数"),
+                InputVariable(name="reference_urls", description="参照URL")
+            ]
         )
         
         self.agenda_function = self.kernel.add_function(
@@ -180,24 +182,31 @@ class AgendaGenerationExecutor(AgentExecutor):
 agent_card = AgentCard(
     name="Agenda Generation Agent",
     description="PowerPoint スライドのアジェンダを生成するエージェント",
-    version="1.0.0"
+    version="1.0.0",
+    url="http://agenda-agent:8001",
+    skills=[],  # Will be populated below
+    capabilities={},
+    default_input_modes=[],
+    default_output_modes=[]
 )
 
 agent_skills = [
     AgentSkill(
         name="generate_agenda",
-        description="プロンプトからスライドアジェンダを生成"
+        description="プロンプトからスライドアジェンダを生成",
+        id="generate_agenda",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     )
 ]
 
 executor = AgendaGenerationExecutor()
 request_handler = DefaultRequestHandler(agent_card, agent_skills, executor)
 
-# FastAPI app
-app = FastAPI(title="Agenda Generation Agent")
-
 # Create A2A application
-a2a_app = A2AStarletteApplication(app, request_handler)
+a2a_app = A2AStarletteApplication(agent_card, request_handler)
 
 if __name__ == "__main__":
     import uvicorn

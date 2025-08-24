@@ -7,7 +7,7 @@ export const useSlideGeneration = () => {
   const [currentJob, setCurrentJob] = useState<SlideGenerationJob | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { accounts } = useMsal();
+  const { accounts, instance } = useMsal();
 
   useEffect(() => {
     // Set auth token when account changes
@@ -59,6 +59,13 @@ export const useSlideGeneration = () => {
 
   const approveAgenda = async (jobId: string, approved: boolean, agenda?: any) => {
     try {
+    // Check if user is authenticated before making the request
+    const accounts = instance.getAllAccounts();
+    if (accounts.length === 0) {
+      setError('認証が必要です。ログインしてください。');
+      return;
+    }
+
       await apiService.approveAgenda(jobId, approved, agenda);
       
       if (approved) {
@@ -69,7 +76,11 @@ export const useSlideGeneration = () => {
         setIsGenerating(false);
       }
     } catch (error: any) {
-      setError(error.message || 'アジェンダ承認に失敗しました');
+      if (error.message.includes('Authentication required')) {
+        setError('認証が期限切れです。ページを更新してログインし直してください。');
+      } else {
+        setError(error.message || 'アジェンダ承認に失敗しました');
+      }
     }
   };
 

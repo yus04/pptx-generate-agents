@@ -1,18 +1,17 @@
-from fastapi import FastAPI
 from semantic_kernel import Kernel
 from semantic_kernel.connectors.ai.open_ai import AzureChatCompletion
-from semantic_kernel.prompt_template import PromptTemplateConfig
+from semantic_kernel.prompt_template import PromptTemplateConfig, InputVariable
 from semantic_kernel.functions import KernelArguments
 from typing import Dict, Any
 import json
 
-from a2a_python_sdk import (
-    AgentCard, AgentSkill, AgentExecutor, DefaultRequestHandler,
-    A2AStarletteApplication
-)
+from a2a.types import AgentCard, AgentSkill
+from a2a.server.agent_execution import AgentExecutor
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.apps import A2AStarletteApplication
 
-from ...shared.models import AgentRequest, AgentResponse
-from ...shared.config import settings
+from shared.models import AgentRequest, AgentResponse
+from shared.config import settings
 
 
 class ReviewExecutor(AgentExecutor):
@@ -85,7 +84,10 @@ class ReviewExecutor(AgentExecutor):
             template=review_prompt,
             name="slide_review",
             description="スライド品質レビューとハルシネーション検出",
-            input_variables=["slide_url", "agenda"]
+            input_variables=[
+                InputVariable(name="slide_url", description="スライドファイルのURL"),
+                InputVariable(name="agenda", description="元のアジェンダ情報")
+            ]
         )
         
         self.review_function = self.kernel.add_function(
@@ -287,24 +289,31 @@ class ReviewExecutor(AgentExecutor):
 agent_card = AgentCard(
     name="Review Agent",
     description="PowerPoint スライドの品質チェックとハルシネーション検出を行うエージェント",
-    version="1.0.0"
+    version="1.0.0",
+    url="http://review-agent:8004",
+    skills=[],  # Will be populated below
+    capabilities={},
+    default_input_modes=[],
+    default_output_modes=[]
 )
 
 agent_skills = [
     AgentSkill(
         name="review_slides",
-        description="スライドの品質チェックとハルシネーション検出"
+        description="スライドの品質チェックとハルシネーション検出",
+        id="review_slides",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     )
 ]
 
 executor = ReviewExecutor()
 request_handler = DefaultRequestHandler(agent_card, agent_skills, executor)
 
-# FastAPI app
-app = FastAPI(title="Review Agent")
-
 # Create A2A application
-a2a_app = A2AStarletteApplication(app, request_handler)
+a2a_app = A2AStarletteApplication(agent_card, request_handler)
 
 if __name__ == "__main__":
     import uvicorn

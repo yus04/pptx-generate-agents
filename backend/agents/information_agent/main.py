@@ -1,23 +1,20 @@
-from fastapi import FastAPI
-from azure.ai.projects import AIProjectsClient
-from azure.ai.projects.models import AgentRunRequest
+from azure.ai.projects import AIProjectClient
 from azure.identity import DefaultAzureCredential
 from typing import Dict, Any, List
 import httpx
-import json
 
-from a2a_python_sdk import (
-    AgentCard, AgentSkill, AgentExecutor, DefaultRequestHandler,
-    A2AStarletteApplication
-)
+from a2a.types import AgentCard, AgentSkill
+from a2a.server.agent_execution import AgentExecutor
+from a2a.server.request_handlers import DefaultRequestHandler
+from a2a.server.apps import A2AStarletteApplication
 
-from ...shared.models import AgentRequest, AgentResponse
-from ...shared.config import settings
+from shared.models import AgentRequest, AgentResponse
+from shared.config import settings
 
 
 class InformationCollectionExecutor(AgentExecutor):
     def __init__(self):
-        self.ai_client = AIProjectsClient(
+        self.ai_client = AIProjectClient(
             endpoint=settings.azure_ai_foundry_endpoint,
             credential=DefaultAzureCredential()
         )
@@ -237,24 +234,31 @@ class InformationCollectionExecutor(AgentExecutor):
 agent_card = AgentCard(
     name="Information Collection Agent",
     description="Microsoft Learn とWebからの情報収集を行うエージェント",
-    version="1.0.0"
+    version="1.0.0",
+    url="http://information-agent:8002",
+    skills=[],  # Will be populated below
+    capabilities={},
+    default_input_modes=[],
+    default_output_modes=[]
 )
 
 agent_skills = [
     AgentSkill(
         name="collect_information",
-        description="スライドアジェンダに基づいて詳細情報を収集"
+        description="スライドアジェンダに基づいて詳細情報を収集",
+        id="collect_information",
+        tags=[],
+        input_modes=[],
+        output_modes=[],
+        examples=[]
     )
 ]
 
 executor = InformationCollectionExecutor()
 request_handler = DefaultRequestHandler(agent_card, agent_skills, executor)
 
-# FastAPI app
-app = FastAPI(title="Information Collection Agent")
-
 # Create A2A application
-a2a_app = A2AStarletteApplication(app, request_handler)
+a2a_app = A2AStarletteApplication(agent_card, request_handler)
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
 from typing import List, Optional
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class Settings(BaseSettings):
     # Azure Authentication
