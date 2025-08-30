@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     blob_container_name: str = "slides"
     
     # Azure AI Foundry
+    azure_ai_foundry_chat_endpoint: str
     azure_ai_foundry_endpoint: str
     azure_ai_foundry_key: str
     azure_ai_foundry_model_deployment: str

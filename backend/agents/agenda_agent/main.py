@@ -16,7 +16,6 @@ from a2a.server.events.event_queue import EventQueue
 from shared.models import SlideContent, SlideAgenda
 from shared.config import settings
 import uuid
-from a2a.types import DataPart
 
 class AgendaGenerationExecutor(AgentExecutor):
     def __init__(self):
@@ -25,7 +24,7 @@ class AgendaGenerationExecutor(AgentExecutor):
         # Azure OpenAI service setup
         self.chat_service = AzureChatCompletion(
             deployment_name=settings.azure_ai_foundry_model_deployment,
-            endpoint=settings.azure_ai_foundry_endpoint,
+            endpoint=settings.azure_ai_foundry_chat_endpoint,
             api_key=settings.azure_ai_foundry_key
         )
         self.kernel.add_service(self.chat_service)
@@ -104,14 +103,15 @@ class AgendaGenerationExecutor(AgentExecutor):
             # payloadが既に辞書の場合と文字列の場合を処理
             raw_data = payload_part.root.data
             if isinstance(raw_data, dict):
-                payload = raw_data
+                data_part = raw_data
             else:
-                payload = json.loads(raw_data)
-            print(f"   ✓ Received payload: {payload}")                       
+                data_part = json.loads(raw_data)
+            print(f"   ✓ Received data part: {data_part}")                       
 
-            prompt = payload.get("payload", {}).get("prompt", "")
-            max_slides = payload.get("payload", {}).get("max_slides", 10)
-            reference_urls = payload.get("payload", {}).get("reference_urls", [])
+            payload = data_part.get("payload", {})
+            prompt = payload.get("prompt", "")
+            max_slides = payload.get("max_slides", 10)
+            reference_urls = payload.get("reference_urls", [])
             print(f"   ✓ Received prompt: {prompt[:50]}..., max_slides: {max_slides}, reference_urls: {reference_urls}")
             
             if not prompt:
@@ -187,8 +187,8 @@ class AgendaGenerationExecutor(AgentExecutor):
                 result_json = json.dumps(agenda.model_dump(), ensure_ascii=False)
                 message = Message(
                     message_id=str(uuid.uuid4()),
-                    role=Role.assistant,
-                    conversation_id=context.message.conversation_id,
+                    role=Role.agent,
+                    context_id=context.message.context_id,
                     parts=[Part(root=TextPart(text=result_json))]
                 )
                 await event_queue.enqueue_event(message)
@@ -202,8 +202,8 @@ class AgendaGenerationExecutor(AgentExecutor):
                 result_json = json.dumps(fallback_agenda.model_dump(), ensure_ascii=False)
                 message = Message(
                     message_id=str(uuid.uuid4()),
-                    role=Role.assistant,
-                    conversation_id=context.message.conversation_id if hasattr(context, 'message') and hasattr(context.message, 'conversation_id') else str(uuid.uuid4()),
+                    role=Role.agent,
+                    context_id=context.message.context_id if hasattr(context, 'message') and hasattr(context.message, 'conversation_id') else str(uuid.uuid4()),
                     parts=[Part(root=TextPart(text=result_json))]
                 )
                 await event_queue.enqueue_event(message)
@@ -218,8 +218,8 @@ class AgendaGenerationExecutor(AgentExecutor):
                     }
                     message = Message(
                         message_id=str(uuid.uuid4()),
-                        role=Role.assistant,
-                        conversation_id=context.message.conversation_id if hasattr(context, 'message') and hasattr(context.message, 'conversation_id') else str(uuid.uuid4()),
+                        role=Role.agent,
+                        context_id=context.message.context_id if hasattr(context, 'message') and hasattr(context.message, 'conversation_id') else str(uuid.uuid4()),
                         parts=[Part(root=TextPart(text=json.dumps(error_response, ensure_ascii=False)))]
                     )
                     await event_queue.enqueue_event(message)
