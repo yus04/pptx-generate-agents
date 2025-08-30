@@ -111,19 +111,3 @@ class GenerationHistory(BaseModel):
     slide_count: int = Field(..., description="スライド数")
     blob_url: str = Field(..., description="ファイルURL")
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-# Agent communication models
-class AgentRequest(BaseModel):
-    request_id: str = Field(..., description="リクエストID")
-    agent_type: str = Field(..., description="エージェントタイプ")
-    payload: Dict[str, Any] = Field(..., description="ペイロード")
-    user_id: str = Field(..., description="ユーザーID")
-
-
-class AgentResponse(BaseModel):
-    request_id: str = Field(..., description="リクエストID")
-    success: bool = Field(..., description="成功フラグ")
-    result: Optional[Dict[str, Any]] = Field(None, description="結果")
-    error: Optional[str] = Field(None, description="エラーメッセージ")
-    progress: int = Field(default=100, description="進捗率")

@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     # Azure AI Foundry
     azure_ai_foundry_endpoint: str
     azure_ai_foundry_key: str
+    azure_ai_foundry_model_deployment: str
     
     # OpenTelemetry
     otel_service_name: str = "pptx-generator"
@@ -35,6 +36,12 @@ class Settings(BaseSettings):
     # API Settings
     api_cors_origins: List[str] = ["http://localhost:3000"]
     api_debug: bool = False
+
+    # Agent URLs
+    agenda_agent_url: str = "http://localhost:8001"
+    information_agent_url: str = "http://localhost:8002"
+    slide_agent_url: str = "http://localhost:8003"
+    review_agent_url: str = "http://localhost:8004"
     
     # Default configurations
     default_llm_model: str = "gpt-4"
