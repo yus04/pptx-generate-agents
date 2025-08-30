@@ -24,6 +24,14 @@ class Settings(BaseSettings):
     azure_ai_foundry_key: str
     azure_ai_foundry_model_deployment: str
     
+    # Bing Search Configuration
+    bing_connection_name: Optional[str] = None
+    bing_connection_id: Optional[str] = None
+    bing_custom_connection_name: Optional[str] = None
+    bing_custom_connection_id: Optional[str] = None
+    bing_custom_instance_name: Optional[str] = None
+    model_deployment_name: Optional[str] = None
+    
     # OpenTelemetry
     otel_service_name: str = "pptx-generator"
     otel_exporter_endpoint: Optional[str] = None
