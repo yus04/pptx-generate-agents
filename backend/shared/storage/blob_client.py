@@ -180,6 +180,32 @@ class BlobStorageClient:
             logger.error(f"Error type: {type(upload_error).__name__}")
             raise
     
+    def upload_file_from_bytes(self, data: bytes, blob_url: str) -> bool:
+        """指定されたURLに直接バイトデータをアップロード（上書き）"""
+        try:
+            # URLからblob名を抽出
+            blob_name = blob_url.split(f"{self.container_name}/")[-1]
+            
+            logger.info(f"=== Uploading bytes to existing blob ===")
+            logger.info(f"Blob name: {blob_name}")
+            logger.info(f"Container: {self.container_name}")
+            logger.info(f"Data size: {len(data)} bytes")
+            logger.info(f"Target URL: {blob_url}")
+            
+            blob_client = self.client.get_blob_client(
+                container=self.container_name,
+                blob=blob_name
+            )
+            
+            blob_client.upload_blob(data, overwrite=True)
+            logger.info(f"File successfully overwritten at: {blob_url}")
+            return True
+            
+        except Exception as upload_error:
+            logger.error(f"Failed to upload to existing blob: {upload_error}")
+            logger.error(f"Error type: {type(upload_error).__name__}")
+            return False
+    
     def download_file(self, blob_url: str) -> Optional[bytes]:
         """URL からファイルをダウンロード"""
         try:
