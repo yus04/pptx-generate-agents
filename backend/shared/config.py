@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     cosmos_db_database_name: str = "pptx_generator"
     
     # Azure Blob Storage
-    blob_storage_connection_string: str
+    blob_storage_account_name: str
     blob_container_name: str = "slides"
     
     # Azure AI Foundry
