@@ -24,57 +24,91 @@ SAMPLE_AGENDA = {
         {
             "page_number": 1,
             "title": "Azure AI Services概要",
-            "content": "• Azure Cognitive Services\n• Azure Machine Learning\n• Azure OpenAI Service",
-            "notes": "",
+            "content": "• Azure Cognitive Services（現Azure AI Services）\n• Azure Machine Learning\n• Azure OpenAI Service\n• Computer Vision、Speech、Language Service\n• 事前学習済みモデルをAPI経由で即利用可能\n• エンタープライズレベルのセキュリティとコンプライアンス",
+            "notes": "2025年現在、30以上のAIサービスを提供。開発者がAI機能をアプリケーションに統合するためのクラウドベースサービス群。",
             "images": [],
             "tables": []
         },
         {
             "page_number": 2,
-            "title": "Azure OpenAI Service詳細",
-            "content": "• GPT-4モデル\n• Text Embedding\n• DALL-E 3",
-            "notes": "",
+            "title": "機械学習モデルの開発とデプロイメント",
+            "content": "• Azure Machine Learning Studioでのノーコード/ローコード開発\n• AutoML（自動機械学習）機能\n• データ準備からモデル運用までの一元管理\n• モデルレジストリでのバージョン管理\n• Azure Container Instance (ACI) / Azure Kubernetes Service (AKS) でのデプロイ\n• MLOpsによる運用・保守",
+            "notes": "Python/R言語対応、分散学習、CI/CD統合。SDK v2への移行が推奨されている。",
+            "images": [],
+            "tables": []
+        },
+        {
+            "page_number": 3,
+            "title": "実用的な活用事例とROI",
+            "content": "• 金融業界：三菱UFJ銀行の融資審査・顧客対応自動化\n• 製造業：トヨタ自動車の自動運転・工場AI基盤\n• 小売業：ユニクロのAI需要予測、セブン-イレブンの商品企画短縮\n• ホスピタリティ：星野リゾートのダイナミックプライシング\n• 投資回収期間：多くが1～2年以内\n• 効果：業務効率化、顧客満足度向上、意思決定高速化",
+            "notes": "具体的ROI例：月22万時間削減（三菱UFJ）、稼働率76%→87%（星野リゾート）、廃棄ロス30%削減（スシロー）",
             "images": [],
             "tables": []
         }
     ],
-    "total_pages": 2,
-    "estimated_duration": 15
+    "total_pages": 3,
+    "estimated_duration": 20
 }
 
 SAMPLE_INFORMATION = {
     "slide_1": {
-        "text": "Azure AI Servicesは、開発者がAI機能をアプリケーションに統合するためのクラウドベースのサービス群です。Computer Vision、Speech Services、Language Servicesなど、30以上のAIサービスを提供しています。",
+        "text": "Azure AI Services（旧Azure Cognitive Services）は、Microsoft Azureが提供するクラウドベースのAI機能群です。2025年現在、30以上のAIサービスを提供しており、開発者がAI機能をアプリケーションに統合するためのシンプルなAPIを提供しています。\n\n主なサービスカテゴリ：\n\n**Azure AI Vision（Computer Vision）**\n画像・動画解析、物体検出、顔認識、OCR（文字認識）などを提供。メディアコンテンツの自動分類や監視用途に活用されています。\n\n**Azure AI Language（Language Service）**\nテキスト分析（感情分析、キーフレーズ抽出、固有表現抽出）、検索支援、チャットボット構築に対応。多言語での自然言語処理が可能です。\n\n**Azure AI Speech**\n音声認識、音声合成、音声翻訳など、多言語対応の音声技術を提供。リアルタイムでの音声処理が可能です。\n\n**Azure OpenAI Service**\nGPTシリーズ、DALLE、Codexなど、OpenAIの高度な言語モデルをMicrosoft Azureのセキュリティ基盤上で利用可能。エンタープライズ向けのセキュリティ・コンプライアンス対応が特徴です。\n\n特徴として、事前学習済みモデルをAPI経由で即座に利用でき、GDPR、HIPAA、SOC 2、ISO 27001に準拠したセキュリティを提供しています。",
         "sources": [
             "https://learn.microsoft.com/azure/ai-services/",
-            "https://azure.microsoft.com/products/ai-services/"
+            "https://azure.microsoft.com/products/ai-services/",
+            "https://learn.microsoft.com/ja-jp/azure/cognitive-services/overview"
         ],
         "images": [
             "https://learn.microsoft.com/azure/ai-services/media/overview.png"
         ],
         "tables": [
             {
-                "headers": ["サービス", "説明", "用途"],
+                "headers": ["サービス", "説明", "主な用途"],
                 "rows": [
-                    ["Computer Vision", "画像解析", "OCR、物体検出"],
-                    ["Speech Services", "音声処理", "音声認識、合成"]
+                    ["Computer Vision", "画像・動画解析", "OCR、物体検出、顔認識"],
+                    ["Language Service", "自然言語処理", "感情分析、テキスト分類"],
+                    ["Speech Services", "音声処理", "音声認識、音声合成"],
+                    ["OpenAI Service", "大規模言語モデル", "テキスト生成、コード生成"]
                 ]
             }
         ]
     },
     "slide_2": {
-        "text": "Azure OpenAI Serviceは、OpenAIの高度な言語モデルへのアクセスを提供します。GPT-4、GPT-3.5-turbo、Embeddingsモデルなどが利用可能で、エンタープライズレベルのセキュリティとコンプライアンスを備えています。",
+        "text": "Azure Machine Learning は、機械学習モデルの構築、トレーニング、デプロイ、管理までを支援するクラウドベースのプラットフォームです。2025年現在、ノーコード/ローコードでの開発環境が充実しており、データサイエンスの専門知識がなくても機械学習モデルを構築できます。\n\n**主な開発プロセス：**\n\n1. **データ準備**\n   - Azure ML Studioでのデータアップロードと前処理\n   - データストア（Blob、SQL DBなど）との連携\n   - 欠損値処理、標準化・正規化、特徴量エンジニアリング\n\n2. **モデル作成・トレーニング**\n   - AutoML（自動機械学習）による自動モデル選択\n   - Python/R、深層学習フレームワーク（PyTorch、TensorFlow）対応\n   - CPU/GPU、分散処理クラスタでのスケーラブルなトレーニング\n   - ハイパーパラメータースイープによる自動最適化\n\n3. **モデル評価・管理**\n   - モデルレジストリでのバージョン管理\n   - 精度、再現率、F値などの評価指標レポート\n   - MLOps（Machine Learning Operations）統合\n\n4. **デプロイメント**\n   - **Azure Container Instance (ACI)**：開発・テスト向け、小規模で迅速なデプロイ\n   - **Azure Kubernetes Service (AKS)**：本番運用向け、スケーラブルな推論サービス\n   - REST APIエンドポイントとしての公開\n   - リアルタイム推論とバッチ推論の両方をサポート\n\n**2025年の新機能：**\n- SDK v2/CLI v2への移行（旧バージョンは段階的終了）\n- Responsible AI機能の強化（公正性、説明性の向上）\n- Azure AI Foundry/Agent Serviceとの連携",
         "sources": [
-            "https://learn.microsoft.com/azure/ai-services/openai/",
-            "https://azure.microsoft.com/products/ai-services/openai-service/"
+            "https://learn.microsoft.com/azure/machine-learning/",
+            "https://learn.microsoft.com/ja-jp/azure/machine-learning/overview-what-is-azure-machine-learning",
+            "https://learn.microsoft.com/azure/machine-learning/how-to-deploy-and-where"
         ],
         "images": [],
         "tables": [
             {
-                "data": [
-                    ["モデル", "最大トークン", "用途"],
-                    ["GPT-4", "8,192", "高度なテキスト生成"],
-                    ["GPT-3.5-turbo", "4,096", "チャット、要約"]
+                "headers": ["デプロイ先", "用途", "特徴", "適用場面"],
+                "rows": [
+                    ["Azure Container Instance", "開発・テスト", "小規模、迅速", "プロトタイプ、検証"],
+                    ["Azure Kubernetes Service", "本番運用", "スケーラブル、高可用性", "大規模サービス"],
+                    ["Azure Functions", "サーバーレス", "イベント駆動", "リアルタイム推論"],
+                    ["Edge デバイス", "エッジ推論", "低レイテンシ", "IoT、製造業"]
+                ]
+            }
+        ]
+    },
+    "slide_3": {
+        "text": "2025年現在、多くの企業がAzure AIサービスを活用して実用的な成果と高いROI（投資利益率）を達成しています。投資回収期間は多くの事例で1～2年以内となっており、継続的な利益拡大が実現されています。\n\n**金融業界の事例：**\n\n**三菱UFJ銀行**\n- 活用内容：融資審査、顧客対応、コールセンター業務の自動化に生成AI（ChatGPT）を導入\n- 効果：月22万時間以上の労働時間削減、提案品質向上\n- 投資額：2027年までに約500億円\n- ROI：人件費削減と顧客満足度向上の両面で効果\n\n**製造業の事例：**\n\n**トヨタ自動車×NTT**\n- 活用内容：自動運転技術、モビリティAI基盤開発、工場でのAIモデル開発プラットフォーム\n- 投資額：2030年までに約5,000億円\n- 効果：交通事故ゼロ社会への貢献、生産性向上\n\n**小売・EC業界の事例：**\n\n**ユニクロ（ファーストリテイリング）**\n- 活用内容：GoogleとのAI需要予測システムによる在庫・商品最適化\n- 効果：過去最高売上を更新、余剰在庫と機会損失の削減\n\n**セブン-イレブン・ジャパン**\n- 活用内容：生成AIによる商品企画期間の短縮（1/10、約3日）\n- 効果：新商品投入ペース向上、即日稟議決裁の実現\n\n**ホスピタリティ業界の事例：**\n\n**星野リゾート**\n- 活用内容：AI需要予測によるダイナミックプライシング\n- 効果：稼働率76%→87%、ADR（平均客室単価）15%アップ\n- ROI：初年度1億円投資で二桁成長\n\n**外食産業の事例：**\n\n**スシロー**\n- 活用内容：RFID×AIによるリアルタイム需要予測、廃棄ロス削減\n- 効果：廃棄ロス30%削減、客単価5%アップ\n\n**共通する成功要因：**\n- 業務効率化による時間・コスト削減\n- 顧客満足度向上（パーソナライズ対応）\n- 意思決定の高速化（リアルタイム分析）\n- 新規ビジネス創出（AI生成コンテンツ、プロダクト開発）",
+        "sources": [
+            "https://learn.microsoft.com/azure/ai-services/case-studies/",
+            "https://learn.microsoft.com/ja-jp/azure/architecture/example-scenario/ai/",
+            "https://learn.microsoft.com/ja-jp/azure/industry/overview/"
+        ],
+        "images": [],
+        "tables": [
+            {
+                "headers": ["企業", "業界", "活用内容", "主な効果", "ROI"],
+                "rows": [
+                    ["三菱UFJ銀行", "金融", "生成AI導入", "月22万時間削減", "コスト25%削減"],
+                    ["星野リゾート", "ホテル", "ダイナミック価格", "稼働率11%向上", "二桁成長"],
+                    ["スシロー", "外食", "需要予測AI", "廃棄ロス30%削減", "客単価5%向上"],
+                    ["セブン-イレブン", "小売", "商品企画AI", "企画期間1/10短縮", "売上機会拡大"]
                 ]
             }
         ]
@@ -235,6 +269,7 @@ def test_sample_data_structure():
     for slide in agenda.get('slides', []):
         print(f"   - Slide {slide.get('page_number', '?')}: {slide.get('title', 'N/A')}")
         print(f"     Content length: {len(slide.get('content', ''))}")
+        print(f"     Notes length: {len(slide.get('notes', ''))}")
     
     # Test information structure
     print("\n2. Testing information structure:")
@@ -249,7 +284,7 @@ def test_sample_data_structure():
         for i, table in enumerate(info.get('tables', [])):
             if isinstance(table, dict):
                 if "headers" in table and "rows" in table:
-                    print(f"       Table {i+1}: Standard format (headers + rows)")
+                    print(f"       Table {i+1}: Standard format (headers + rows) - {len(table.get('rows', []))} rows")
                 elif "data" in table:
                     print(f"       Table {i+1}: Information agent format (data array)")
                 else:
@@ -274,10 +309,11 @@ async def main():
     print("\nThis test validates:")
     print("• ✓ Slide agent connectivity and agent card")
     print("• ✓ A2A client communication with slide agent")
-    print("• ✓ Sample agenda and information data structure")
-    print("• ✓ Slide creation with agenda and information input")
+    print("• ✓ Sample agenda and information data structure (3 slides)")
+    print("• ✓ Slide creation with realistic Azure AI content")
     print("• ✓ PowerPoint file generation and upload to blob storage")
     print("• ✓ Slide content extraction for review")
+    print("• ✓ Enhanced sample data with enterprise use cases and ROI examples")
 
 
 if __name__ == "__main__":

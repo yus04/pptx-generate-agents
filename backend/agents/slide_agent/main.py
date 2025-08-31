@@ -242,6 +242,13 @@ class SlideCreationExecutor(AgentExecutor):
             **利用可能な画像**:
             {chr(10).join(existing_images[:3]) if existing_images else "画像なし"}
             
+            重要な制約:
+            1. コンテンツは200文字以内で簡潔にまとめてください
+            2. タイトルは30文字以内にしてください
+            3. 箇条書きを活用して読みやすくしてください
+            4. テーブルがある場合は、テキストは150文字以内にしてください
+            5. 画像がある場合は、テキストは170文字以内にしてください
+            
             スライドに適した簡潔で分かりやすいコンテンツを作成し、JSON形式で返してください。
             """
             
@@ -282,17 +289,46 @@ class SlideCreationExecutor(AgentExecutor):
                                     content = ai_response["content"]
                                     if isinstance(content, list):
                                         # リストの場合は文字列に変換
-                                        ai_response["content"] = "\n".join(str(item) for item in content)
+                                        content = "\n".join(str(item) for item in content)
                                     elif not isinstance(content, str):
                                         # その他の型の場合は文字列に変換
-                                        ai_response["content"] = str(content)
+                                        content = str(content)
+                                    
+                                    # コンテンツの文字数制限を適用
+                                    if len(content) > 200:
+                                        content = content[:200].strip()
+                                        # 適切な位置で切り詰める
+                                        last_complete = max(
+                                            content.rfind('。'),
+                                            content.rfind('\n'),
+                                            content.rfind('•'),
+                                            content.rfind('・')
+                                        )
+                                        if last_complete > 140:  # 70%以上なら使用
+                                            content = content[:last_complete + 1]
+                                        else:
+                                            content += "..."
+                                    
+                                    ai_response["content"] = content
+                                
+                                # タイトルの文字数制限
+                                if "title" in ai_response:
+                                    title_val = ai_response["title"]
+                                    if not isinstance(title_val, str):
+                                        title_val = str(title_val)
+                                    if len(title_val) > 30:
+                                        title_val = title_val[:30] + "..."
+                                    ai_response["title"] = title_val
                                 
                                 # その他のフィールドの型検証
-                                if "title" in ai_response and not isinstance(ai_response["title"], str):
-                                    ai_response["title"] = str(ai_response["title"])
-                                
-                                if "notes" in ai_response and ai_response["notes"] is not None and not isinstance(ai_response["notes"], str):
-                                    ai_response["notes"] = str(ai_response["notes"])
+                                if "notes" in ai_response and ai_response["notes"] is not None:
+                                    notes = ai_response["notes"]
+                                    if not isinstance(notes, str):
+                                        notes = str(notes)
+                                    # ノートも制限
+                                    if len(notes) > 100:
+                                        notes = notes[:100] + "..."
+                                    ai_response["notes"] = notes
                                 
                                 if "images" in ai_response and not isinstance(ai_response["images"], list):
                                     ai_response["images"] = [ai_response["images"]] if ai_response["images"] else []
@@ -450,7 +486,7 @@ class SlideCreationExecutor(AgentExecutor):
         include_tables: bool,
         slide_layouts
     ):
-        """個別スライドを作成"""
+        """個別スライドを作成（重複しないレイアウト）"""
         
         # スライドレイアウトを選択
         if slide_content.page_number == 1:
@@ -464,36 +500,184 @@ class SlideCreationExecutor(AgentExecutor):
         
         # タイトル設定
         title = slide.shapes.title
+        title_height = Inches(1.0)  # タイトルエリアの高さ
         if title:
-            title.text = slide_content.title
+            # タイトルの文字数制限（25文字）
+            title_text = slide_content.title[:25]
+            if len(slide_content.title) > 25:
+                title_text += "..."
+            title.text = title_text
             self._format_title(title)
+            
+            # タイトルの位置とサイズを明示的に設定
+            title.left = Inches(0.5)
+            title.top = Inches(0.2)
+            title.width = Inches(9.5)
+            title.height = Inches(0.8)
+            title_height = Inches(1.0)
         
-        # AIで生成されたコンテンツを設定
-        if len(slide.placeholders) > 1:
-            content_placeholder = slide.placeholders[1]
-            if content_placeholder.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER:
-                content_placeholder.text = slide_content.content
-                self._format_content(content_placeholder)
-        
-        # SlideContentに含まれる画像を追加
-        if include_images and slide_content.images:
-            for i, image_url in enumerate(slide_content.images[:2]):
-                self._add_image_to_slide(slide, image_url, i)
-        
-        # SlideContentに含まれるテーブルを追加
-        if include_tables and slide_content.tables:
-            for table_data in slide_content.tables[:1]:
-                self._add_table_to_slide(slide, table_data)
-        
-        # 詳細情報があれば追加（information_agentからの生データ）
+        # 詳細情報の取得
         detailed_content = information.get(f"slide_{slide_content.page_number}", {})
-        if detailed_content:
-            self._add_detailed_content(slide, detailed_content, include_images, include_tables)
         
-        # ノート追加（ハルシネーション警告等）
+        # コンテンツの配置を計画
+        has_table = include_tables and (slide_content.tables or detailed_content.get("tables", []))
+        has_images = include_images and (slide_content.images or detailed_content.get("images", []))
+        
+        # 利用可能な領域を計算
+        available_height = Inches(6.3)  # 7.5 - 1.2（タイトル分）
+        current_y = title_height + Inches(0.2)  # タイトルの下 + マージン
+        
+        # レイアウト戦略を決定
+        if has_table and has_images:
+            # テーブル + 画像: 左右分割
+            self._create_mixed_layout(slide, slide_content, detailed_content, current_y, available_height)
+        elif has_table:
+            # テーブルのみ: 上下分割
+            self._create_table_layout(slide, slide_content, detailed_content, current_y, available_height)
+        elif has_images:
+            # 画像のみ: 左右分割
+            self._create_image_layout(slide, slide_content, detailed_content, current_y, available_height)
+        else:
+            # テキストのみ: 全幅使用
+            self._create_text_only_layout(slide, slide_content, current_y, available_height)
+        
+        # ノート追加
         if slide_content.notes:
             notes_slide = slide.notes_slide
             notes_slide.notes_text_frame.text = slide_content.notes
+    
+    def _create_mixed_layout(self, slide, slide_content: SlideContent, detailed_content: Dict, start_y: float, available_height: float):
+        """テーブル + 画像の混合レイアウト"""
+        # テキストエリア（上部、文字数制限）
+        content_text = self._limit_text_content(slide_content.content, has_table=True, has_images=True)
+        text_box = slide.shapes.add_textbox(
+            Inches(0.5), start_y, Inches(9.0), Inches(1.5)
+        )
+        text_box.text = content_text
+        self._format_text_box(text_box, font_size=14)
+        
+        # テーブルエリア（左下）
+        table_y = start_y + Inches(1.7)
+        table_data_list = slide_content.tables or detailed_content.get("tables", [])
+        if table_data_list:
+            self._add_table_to_slide_fixed(slide, table_data_list[0], 
+                                         Inches(0.5), table_y, Inches(5.0), Inches(2.5))
+        
+        # 画像エリア（右下）
+        image_y = start_y + Inches(1.7)
+        image_list = slide_content.images or detailed_content.get("images", [])
+        if image_list:
+            self._add_image_to_slide_fixed(slide, image_list[0], 
+                                         Inches(6.0), image_y, Inches(3.5), Inches(2.5))
+    
+    def _create_table_layout(self, slide, slide_content: SlideContent, detailed_content: Dict, start_y: float, available_height: float):
+        """テーブル中心のレイアウト"""
+        # テキストエリア（上部、制限あり）
+        content_text = self._limit_text_content(slide_content.content, has_table=True, has_images=False)
+        text_box = slide.shapes.add_textbox(
+            Inches(0.5), start_y, Inches(9.0), Inches(2.0)
+        )
+        text_box.text = content_text
+        self._format_text_box(text_box, font_size=16)
+        
+        # テーブルエリア（下部、大きめ）
+        table_y = start_y + Inches(2.2)
+        table_data_list = slide_content.tables or detailed_content.get("tables", [])
+        if table_data_list:
+            self._add_table_to_slide_fixed(slide, table_data_list[0], 
+                                         Inches(0.5), table_y, Inches(9.0), Inches(3.5))
+    
+    def _create_image_layout(self, slide, slide_content: SlideContent, detailed_content: Dict, start_y: float, available_height: float):
+        """画像中心のレイアウト"""
+        # テキストエリア（左側）
+        content_text = self._limit_text_content(slide_content.content, has_table=False, has_images=True)
+        text_box = slide.shapes.add_textbox(
+            Inches(0.5), start_y, Inches(5.0), Inches(4.5)
+        )
+        text_box.text = content_text
+        self._format_text_box(text_box, font_size=16)
+        
+        # 画像エリア（右側）
+        image_list = slide_content.images or detailed_content.get("images", [])
+        for i, image_url in enumerate(image_list[:2]):
+            image_y = start_y + (i * Inches(2.3))
+            if image_y + Inches(2.0) <= start_y + available_height:
+                self._add_image_to_slide_fixed(slide, image_url, 
+                                             Inches(6.0), image_y, Inches(3.5), Inches(2.0))
+    
+    def _create_text_only_layout(self, slide, slide_content: SlideContent, start_y: float, available_height: float):
+        """テキストのみのレイアウト"""
+        # プレースホルダーを削除して独自のテキストボックスを作成
+        for shape in slide.shapes:
+            if shape.shape_type == MSO_SHAPE_TYPE.PLACEHOLDER and shape != slide.shapes.title:
+                sp = shape._element
+                sp.getparent().remove(sp)
+        
+        # フルサイズのテキストボックス
+        content_text = self._limit_text_content(slide_content.content, has_table=False, has_images=False)
+        text_box = slide.shapes.add_textbox(
+            Inches(0.5), start_y, Inches(9.0), available_height
+        )
+        text_box.text = content_text
+        self._format_text_box(text_box, font_size=18)
+    
+    def _format_text_box(self, text_box, font_size=16):
+        """テキストボックスのフォーマット"""
+        text_frame = text_box.text_frame
+        text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
+        text_frame.margin_left = Inches(0.1)
+        text_frame.margin_right = Inches(0.1)
+        text_frame.margin_top = Inches(0.1)
+        text_frame.margin_bottom = Inches(0.1)
+        text_frame.word_wrap = True
+        
+        for paragraph in text_frame.paragraphs:
+            paragraph.font.size = Pt(font_size)
+            paragraph.space_after = Pt(6)
+    
+    def _limit_text_content(self, content: str, has_table: bool, has_images: bool) -> str:
+        """スライドに表示するテキストの文字数を制限（重複回避対応）"""
+        # 基本文字数制限を大幅に縮小
+        base_limit = 150
+        
+        # テーブルや画像がある場合はさらに制限
+        if has_table and has_images:
+            # 混合レイアウト: 大幅制限
+            base_limit = 80
+        elif has_table:
+            # テーブルのみ: 中程度制限
+            base_limit = 120
+        elif has_images:
+            # 画像のみ: 軽い制限
+            base_limit = 130
+        
+        # 最小限度を保証
+        base_limit = max(base_limit, 60)
+        
+        if len(content) <= base_limit:
+            return content
+        
+        # 文字数制限に合わせて切り詰め、適切な箇所で終了
+        truncated = content[:base_limit]
+        
+        # 最後の完全な文や箇条書き項目で終了するように調整
+        last_complete = max(
+            truncated.rfind('。'),
+            truncated.rfind('\n'),
+            truncated.rfind('•'),
+            truncated.rfind('・'),
+            truncated.rfind('、'),
+            truncated.rfind(' ')
+        )
+        
+        if last_complete > base_limit * 0.6:  # 60%以上の長さなら使用
+            truncated = truncated[:last_complete + 1]
+        else:
+            # 適切な区切りが見つからない場合は単語境界で区切る
+            while truncated and not truncated[-1].isspace() and not truncated[-1] in '。、・•':
+                truncated = truncated[:-1]
+        
+        return truncated.rstrip() + "..."
     
     def _format_title(self, title_shape):
         """タイトルの書式設定"""
@@ -509,9 +693,15 @@ class SlideCreationExecutor(AgentExecutor):
             text_frame = content_shape.text_frame
             text_frame.auto_size = MSO_AUTO_SIZE.SHAPE_TO_FIT_TEXT
             
+            # テキストフレームのサイズを調整
+            text_frame.margin_left = Inches(0.1)
+            text_frame.margin_right = Inches(0.1)
+            text_frame.margin_top = Inches(0.1)
+            text_frame.margin_bottom = Inches(0.1)
+            
             for paragraph in text_frame.paragraphs:
-                paragraph.font.size = Pt(18)
-                paragraph.space_after = Pt(12)
+                paragraph.font.size = Pt(16)  # フォントサイズを少し小さく
+                paragraph.space_after = Pt(6)  # 行間を縮小
     
     def _add_detailed_content(
         self, 
@@ -520,98 +710,56 @@ class SlideCreationExecutor(AgentExecutor):
         include_images: bool,
         include_tables: bool
     ):
-        """詳細コンテンツを追加"""
+        """詳細コンテンツを追加（重複を避けて追加情報のみ）"""
         
-        # テキストコンテンツの追加
+        # テキストコンテンツの追加（既にメインコンテンツが設定されている場合は制限）
         text_content = detailed_content.get("text", "")
         if text_content and len(slide.placeholders) > 1:
             content_placeholder = slide.placeholders[1]
             if hasattr(content_placeholder, 'text'):
+                # 既存のテキストがある場合は、追加情報として簡潔に追加
                 if content_placeholder.text:
-                    content_placeholder.text += "\n\n" + text_content[:500]  # 長すぎる場合は切り詰め
+                    # 追加テキストを100文字以内に制限
+                    additional_text = text_content[:100].strip()
+                    if len(text_content) > 100:
+                        additional_text += "..."
+                    content_placeholder.text += "\n\n" + additional_text
                 else:
+                    # メインテキストがない場合は500文字まで設定
                     content_placeholder.text = text_content[:500]
-        
-        # 画像の追加 - information_agentから収集された画像とAIが推奨する画像の両方を処理
-        if include_images:
-            # 既存の画像（information_agentから）
-            existing_images = detailed_content.get("images", [])
-            for i, image_url in enumerate(existing_images[:2]):  # 最大2つの画像
-                self._add_image_to_slide(slide, image_url, i)
-        
-        # テーブルの追加 - information_agentで収集されたデータとAIが構造化したデータ
-        if include_tables:
-            # 既存のテーブル（information_agentから）
-            existing_tables = detailed_content.get("tables", [])
-            for table_data in existing_tables[:1]:  # 最大1つのテーブル
-                self._add_table_to_slide(slide, table_data)
+                    if len(text_content) > 500:
+                        content_placeholder.text += "..."
     
-    def _add_image_to_slide(self, slide, image_url: str, position: int):
-        """スライドに画像を追加"""
+    def _add_image_to_slide_fixed(self, slide, image_url: str, left: float, top: float, width: float, height: float):
+        """指定位置に画像を追加（固定サイズ）"""
         try:
-            # 画像をダウンロード
             response = requests.get(image_url, timeout=10)
             if response.status_code == 200:
-                # 一時ファイルに保存
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
                     tmp_file.write(response.content)
                     tmp_file_path = tmp_file.name
                 
-                # 画像サイズと位置を計算
-                left = Inches(6) if position == 0 else Inches(6)
-                top = Inches(2 + position * 2.5)
-                width = Inches(3)
-                
-                # スライドに画像を追加
-                slide.shapes.add_picture(tmp_file_path, left, top, width=width)
-                
-                # 一時ファイルを削除
+                slide.shapes.add_picture(tmp_file_path, left, top, width=width, height=height)
                 os.unlink(tmp_file_path)
+                return True
         except Exception as e:
             print(f"Failed to add image {image_url}: {e}")
+            return False
     
-    def _add_table_to_slide(self, slide, table_data: Dict[str, Any]):
-        """スライドにテーブルを追加"""
+    def _add_table_to_slide_fixed(self, slide, table_data: Dict[str, Any], left: float, top: float, width: float, height: float):
+        """指定位置にテーブルを追加（固定サイズ）"""
         try:
-            # 様々な形式のテーブルデータに対応
-            headers = []
-            rows = []
-            
-            if isinstance(table_data, dict):
-                if "headers" in table_data and "rows" in table_data:
-                    # 標準形式: {"headers": [...], "rows": [[...]]}
-                    headers = table_data.get("headers", [])
-                    rows = table_data.get("rows", [])
-                elif "data" in table_data:
-                    # information_agentから: {"data": [[...]]}
-                    data = table_data.get("data", [])
-                    if data and len(data) > 0:
-                        headers = data[0]  # 最初の行をヘッダーとして使用
-                        rows = data[1:] if len(data) > 1 else []
-                else:
-                    # その他の形式を試す
-                    for key, value in table_data.items():
-                        if isinstance(value, list) and len(value) > 0:
-                            if isinstance(value[0], list):
-                                # リストのリスト形式
-                                headers = value[0] if len(value) > 0 else []
-                                rows = value[1:] if len(value) > 1 else []
-                                break
-            elif isinstance(table_data, list):
-                # 直接リスト形式: [[...], [...]]
-                if len(table_data) > 0:
-                    headers = table_data[0] if isinstance(table_data[0], list) else []
-                    rows = table_data[1:] if len(table_data) > 1 else []
+            # テーブルデータの解析
+            headers, rows = self._parse_table_data(table_data)
             
             if not headers or not rows:
-                print(f"Warning: Invalid table data format: {table_data}")
-                return
+                return False
             
-            # テーブルの位置とサイズ
-            left = Inches(0.5)
-            top = Inches(4)
-            width = Inches(9)
-            height = Inches(2)
+            # サイズ制限（画面に収まるように）
+            max_rows = 4
+            max_cols = 4
+            headers = headers[:max_cols]
+            rows = rows[:max_rows]
             
             # テーブル作成
             shape = slide.shapes.add_table(
@@ -623,8 +771,11 @@ class SlideCreationExecutor(AgentExecutor):
             for i, header in enumerate(headers):
                 if i < len(table.columns):
                     cell = table.cell(0, i)
-                    cell.text = str(header)
+                    cell.text = str(header)[:12]  # 12文字制限
+                    if len(str(header)) > 12:
+                        cell.text += "..."
                     cell.text_frame.paragraphs[0].font.bold = True
+                    cell.text_frame.paragraphs[0].font.size = Pt(9)
             
             # データ行設定
             for row_idx, row in enumerate(rows):
@@ -632,11 +783,70 @@ class SlideCreationExecutor(AgentExecutor):
                     for col_idx, cell_data in enumerate(row):
                         if col_idx < len(headers) and col_idx < len(table.columns):
                             cell = table.cell(row_idx + 1, col_idx)
-                            cell.text = str(cell_data)
-        
+                            cell.text = str(cell_data)[:15]  # 15文字制限
+                            if len(str(cell_data)) > 15:
+                                cell.text += "..."
+                            cell.text_frame.paragraphs[0].font.size = Pt(8)
+            
+            return True
         except Exception as e:
             print(f"Failed to add table: {e}")
-            print(f"Table data was: {table_data}")
+            return False
+    
+    def _parse_table_data(self, table_data: Dict[str, Any]):
+        """テーブルデータを統一形式に解析"""
+        headers = []
+        rows = []
+        
+        if isinstance(table_data, dict):
+            if "headers" in table_data and "rows" in table_data:
+                headers = table_data.get("headers", [])
+                rows = table_data.get("rows", [])
+            elif "data" in table_data:
+                data = table_data.get("data", [])
+                if data and len(data) > 0:
+                    headers = data[0]
+                    rows = data[1:] if len(data) > 1 else []
+        elif isinstance(table_data, list) and len(table_data) > 0:
+            if isinstance(table_data[0], list):
+                headers = table_data[0]
+                rows = table_data[1:] if len(table_data) > 1 else []
+        
+        return headers, rows
+
+    def _add_image_to_slide(self, slide, image_url: str, position: int, y_position: float = None, max_height: float = None):
+        """スライドに画像を追加（位置調整版）- レガシーメソッド"""
+        # 新しい固定位置メソッドを使用
+        if y_position is not None:
+            return self._add_image_to_slide_fixed(
+                slide, image_url, 
+                Inches(6.0), y_position, 
+                Inches(3.0), max_height or Inches(2.0)
+            )
+        else:
+            # フォールバック
+            return self._add_image_to_slide_fixed(
+                slide, image_url,
+                Inches(6.0), Inches(2 + position * 2.5),
+                Inches(3.0), Inches(2.0)
+            )
+    
+    def _add_table_to_slide(self, slide, table_data: Dict[str, Any], y_position: float = None):
+        """スライドにテーブルを追加（位置調整版）- レガシーメソッド"""
+        # 新しい固定位置メソッドを使用
+        if y_position is not None:
+            return self._add_table_to_slide_fixed(
+                slide, table_data,
+                Inches(0.5), y_position,
+                Inches(8.5), Inches(2.5)
+            )
+        else:
+            # フォールバック
+            return self._add_table_to_slide_fixed(
+                slide, table_data,
+                Inches(0.5), Inches(4.0),
+                Inches(9.0), Inches(2.5)
+            )
 
 if __name__ == "__main__":
     agent_skills = [
