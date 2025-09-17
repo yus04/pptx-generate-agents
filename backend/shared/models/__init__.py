@@ -93,13 +93,14 @@ class SlideGenerationJob(BaseModel):
 
 
 class UserSettings(BaseModel):
+    id: str = Field(..., description="ユーザー設定ID")  
     user_id: str = Field(..., description="ユーザーID")
-    default_llm_config_id: Optional[str] = Field(None, description="デフォルトLLM設定ID")
-    default_template_id: Optional[str] = Field(None, description="デフォルトテンプレートID")
-    auto_approval: bool = Field(default=False, description="自動承認設定")
-    notification_enabled: bool = Field(default=True, description="通知有効")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    default_llm_config: str = Field(default="gpt-4", description="デフォルトLLM設定ID")
+    default_template: str = Field(default="business", description="デフォルトテンプレートID")
+    auto_save: bool = Field(default=True, description="自動保存設定")
+    theme: str = Field(default="light", description="テーマ設定")
+    created_at: Optional[str] = Field(default=None, description="作成日時")
+    updated_at: Optional[str] = Field(default=None, description="更新日時")
 
 
 class GenerationHistory(BaseModel):
@@ -110,19 +111,3 @@ class GenerationHistory(BaseModel):
     slide_count: int = Field(..., description="スライド数")
     blob_url: str = Field(..., description="ファイルURL")
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-# Agent communication models
-class AgentRequest(BaseModel):
-    request_id: str = Field(..., description="リクエストID")
-    agent_type: str = Field(..., description="エージェントタイプ")
-    payload: Dict[str, Any] = Field(..., description="ペイロード")
-    user_id: str = Field(..., description="ユーザーID")
-
-
-class AgentResponse(BaseModel):
-    request_id: str = Field(..., description="リクエストID")
-    success: bool = Field(..., description="成功フラグ")
-    result: Optional[Dict[str, Any]] = Field(None, description="結果")
-    error: Optional[str] = Field(None, description="エラーメッセージ")
-    progress: int = Field(default=100, description="進捗率")

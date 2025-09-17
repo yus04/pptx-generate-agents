@@ -1,6 +1,8 @@
 from pydantic_settings import BaseSettings
 from typing import List, Optional
+from dotenv import load_dotenv
 
+load_dotenv()
 
 class Settings(BaseSettings):
     # Azure Authentication
@@ -14,12 +16,22 @@ class Settings(BaseSettings):
     cosmos_db_database_name: str = "pptx_generator"
     
     # Azure Blob Storage
-    blob_storage_connection_string: str
+    blob_storage_account_name: str
     blob_container_name: str = "slides"
     
     # Azure AI Foundry
+    azure_ai_foundry_chat_endpoint: str
     azure_ai_foundry_endpoint: str
     azure_ai_foundry_key: str
+    azure_ai_foundry_model_deployment: str
+    
+    # Bing Search Configuration
+    bing_connection_name: Optional[str] = None
+    bing_connection_id: Optional[str] = None
+    bing_custom_connection_name: Optional[str] = None
+    bing_custom_connection_id: Optional[str] = None
+    bing_custom_instance_name: Optional[str] = None
+    model_deployment_name: Optional[str] = None
     
     # OpenTelemetry
     otel_service_name: str = "pptx-generator"
@@ -33,6 +45,12 @@ class Settings(BaseSettings):
     # API Settings
     api_cors_origins: List[str] = ["http://localhost:3000"]
     api_debug: bool = False
+
+    # Agent URLs
+    agenda_agent_url: str = "http://localhost:8001"
+    information_agent_url: str = "http://localhost:8002"
+    slide_agent_url: str = "http://localhost:8003"
+    review_agent_url: str = "http://localhost:8004"
     
     # Default configurations
     default_llm_model: str = "gpt-4"
